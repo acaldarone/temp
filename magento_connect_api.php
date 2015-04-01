@@ -2,12 +2,20 @@
 	echo 'Name File: ' . __FILE__ . PHP_EOL;
 	
 	try {
+		
 		// Magento Localhost
 		/**/
+		$name = 'Magento Localhost';
 		$url = 'http://magento.local/api/soap/?wsdl';
 		$user = 'magento_api';
 		$key = 'magento_api';
-		$store = 1;
+		$status = array('pending');
+		$store = array(1);
+		$search_store_name = 'English';
+		$from_date = '2015-04-01 00:00:00';
+		$to_date = '2015-04-30 23:59:59';
+		$increment_id = array('100000095');
+		$order_id = array('192');
 		/**/
 
 		// Creamos una conexión SOAP
@@ -24,22 +32,23 @@
 
 		// Store
 		$storeList = $client->call($session, 'store.list');
-		$store = $client->call($session, 'store.info', '1');
+		$store = $client->call($session, 'store.info', $store);
 
-		// Pedimos un listado de las ordenes actualizadas entre un rango de fechas.
+		// Pedimos un listado de las ordenes segun filtros aplicados
 		$list_update_order = $client->call(
 			$session,
 			'sales_order.list',
 			array(
 				'filter' => array(
-					//'status' => array('pending'),
-					'store_id' => array($store),
-					//'store_name' => array('like' => '%English'),
+					//'status' => $status,
+					'store_id' => $store,
+					//'store_name' => array('like' => '%' . $search_store_name),
 					'updated_at' => array(
-						'from' => '2015-03-30 00:00:00',
-						'to' => '2015-03-31 23:59:59'
+						'from' => $from_date,
+						'to' => $to_date
 					),
-					//'increment_id' => array('100000203'),
+					//'increment_id' => $increment_id,
+					//'order_id' => $order_id,
 				)
 			)
 		);
@@ -60,13 +69,13 @@
 			);
 		}
 
-		foreach ($list_order as $order) {
+		foreach ($list_order as $value) {
 			$list_shipment[] = $client->call(
 				$session,
 				'sales_order_shipment.list',
 				array(
 					'filter' => array(
-						'order_id' => $order['order_id']
+						'order_id' => $value['order_id']
 					)
 				)
 			);
@@ -86,13 +95,14 @@
 
 		$serialize_list_order = serialize($list_order);
 
-		echo '<pre> <p>Info: </p>';
-		//print_r($storeList); echo '<hr />';
-		//print_r($store); echo '<hr />';
-		//print_r($list_update_order); echo '<hr />';
-		print_r($list_order); echo '<hr />';
-		print_r($list_shipment); echo '<hr />';
-		print_r($info_shipment); echo '<hr />';
+		echo '<pre>';
+		echo '<p>' . $name . '</p>';
+		//echo '$storeList: ' . PHP_EOL;         print_r($storeList);         echo '<hr />';
+		//echo '$store: ' . PHP_EOL;             print_r($store);             echo '<hr />';
+		//echo '$list_update_order: ' . PHP_EOL; print_r($list_update_order); echo '<hr />';
+		echo '$list_order: ' . PHP_EOL;        print_r($list_order);        echo '<hr />';
+		echo '$list_shipment: ' . PHP_EOL;     print_r($list_shipment);     echo '<hr />';
+		echo '$info_shipment: ' . PHP_EOL;     print_r($info_shipment);     echo '<hr />';
 		echo '</pre>';
 	} catch (Exception $e) {
 		echo '<pre> <p>Exception: </p>';
