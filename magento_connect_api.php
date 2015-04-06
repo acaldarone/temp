@@ -1,8 +1,9 @@
 <?php
 	echo 'Name File: ' . __FILE__ . PHP_EOL;
-	
+
 	try {
-		
+		$now_date = new \DateTime();
+
 		// Magento Localhost
 		/**/
 		$name = 'Magento Localhost';
@@ -10,10 +11,10 @@
 		$user = 'magento_api';
 		$key = 'magento_api';
 		$status = array('pending');
-		$store = array(1);
+		$store_id = array(1);
 		$search_store_name = 'English';
-		$from_date = '2015-04-01 00:00:00';
-		$to_date = '2015-04-30 23:59:59';
+		$from_date = '2015-03-01 00:00:00';
+		$to_date = $now_date->format('Y-m-d H:i:s');
 		$increment_id = array('100000095');
 		$order_id = array('192');
 		/**/
@@ -32,7 +33,7 @@
 
 		// Store
 		$storeList = $client->call($session, 'store.list');
-		$store = $client->call($session, 'store.info', $store);
+		$store = $client->call($session, 'store.info', $store_id);
 
 		// Pedimos un listado de las ordenes segun filtros aplicados
 		$list_update_order = $client->call(
@@ -41,7 +42,7 @@
 			array(
 				'filter' => array(
 					//'status' => $status,
-					'store_id' => $store,
+					'store_id' => $store_id,
 					//'store_name' => array('like' => '%' . $search_store_name),
 					'updated_at' => array(
 						'from' => $from_date,
