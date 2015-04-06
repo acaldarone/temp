@@ -6,22 +6,22 @@
 
 		// Magento Localhost
 		/**/
-		$name = 'Magento Localhost';
-		$url = 'http://magento.local/api/soap/?wsdl';
-		$user = 'magento_api';
-		$key = 'magento_api';
-		$status = array('pending');
-		$store_id = array(1);
-		$search_store_name = 'English';
-		$from_date = '2015-03-01 00:00:00';
-		$to_date = $now_date->format('Y-m-d H:i:s');
-		$increment_id = array('100000095');
-		$order_id = array('192');
+		$config['name'] = 'Magento Localhost';
+		$config['url'] = 'http://magento.local/api/soap/?wsdl';
+		$config['user'] = 'magento_api';
+		$config['key'] = 'magento_api';
+		$config['status'] = array('pending');
+		$config['store_id'] = array(1);
+		$config['search_store_name'] = 'English';
+		$config['from_date'] = '2015-03-01 00:00:00';
+		$config['to_date'] = $now_date->format('Y-m-d H:i:s');
+		$config['increment_id'] = array('100000095');
+		$config['order_id'] = array('192');
 		/**/
 
 		// Creamos una conexión SOAP
 		$client = new SoapClient(
-			$url,
+			$config['url'],
 			array(
 				'trace' => 1,
 				'connection_timeout' => 120
@@ -29,11 +29,11 @@
 		);
 
 		// Login SOAP
-		$session = $client->login($user, $key);
+		$session = $client->login($config['user'], $config['key']);
 
 		// Store
 		$storeList = $client->call($session, 'store.list');
-		$store = $client->call($session, 'store.info', $store_id);
+		$store = $client->call($session, 'store.info', $config['store_id']);
 
 		// Pedimos un listado de las ordenes segun filtros aplicados
 		$list_update_order = $client->call(
@@ -41,15 +41,15 @@
 			'sales_order.list',
 			array(
 				'filter' => array(
-					//'status' => $status,
-					'store_id' => $store_id,
-					//'store_name' => array('like' => '%' . $search_store_name),
+					//'status' => $config['status'],
+					'store_id' => $config['store_id'],
+					//'store_name' => array('like' => '%' . $config['search_store_name']),
 					'updated_at' => array(
-						'from' => $from_date,
-						'to' => $to_date
+						'from' => $config['from_date'],
+						'to' => $config['to_date']
 					),
-					//'increment_id' => $increment_id,
-					//'order_id' => $order_id,
+					//'increment_id' => $config['increment_id'],
+					//'order_id' => $config['order_id'],
 				)
 			)
 		);
@@ -97,13 +97,14 @@
 		$serialize_list_order = serialize($list_order);
 
 		echo '<pre>';
-		echo '<p>' . $name . '</p>';
+		echo '<p>' . $config['name'] . '</p>';
+		echo 'Data config: ' . PHP_EOL; print_r($config); echo '<hr />';
 		//echo '$storeList: ' . PHP_EOL;         print_r($storeList);         echo '<hr />';
 		//echo '$store: ' . PHP_EOL;             print_r($store);             echo '<hr />';
-		//echo '$list_update_order: ' . PHP_EOL; print_r($list_update_order); echo '<hr />';
-		echo '$list_order: ' . PHP_EOL;        print_r($list_order);        echo '<hr />';
-		echo '$list_shipment: ' . PHP_EOL;     print_r($list_shipment);     echo '<hr />';
-		echo '$info_shipment: ' . PHP_EOL;     print_r($info_shipment);     echo '<hr />';
+		echo '$list_update_order: Count: ' . count($list_shipment) . PHP_EOL; print_r($list_update_order); echo '<hr />';
+		echo '$list_order: Count: ' . count($list_order) . PHP_EOL;           print_r($list_order);        echo '<hr />';
+		echo '$list_shipment: Count: ' . count($list_shipment) . PHP_EOL;     print_r($list_shipment);     echo '<hr />';
+		echo '$info_shipment: Count: ' . count($list_shipment) . PHP_EOL;     print_r($info_shipment);     echo '<hr />';
 		echo '</pre>';
 	} catch (Exception $e) {
 		echo '<pre> <p>Exception: </p>';
