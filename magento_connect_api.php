@@ -1,11 +1,19 @@
 <?php
-	echo '<p>Begin Script File Name: ' . __FILE__ . '</p>';
+	// php /var/www/html/temp/magento_connect_api.php > ~/Escritorio/result.localhost.txt
+	// http://temp/magento_connect_api.php
+
+	echo '<p>Begin Script: ' . date('Y-m-d H:i:s') . ' / File Name: ' . __FILE__ . ' </p>' . PHP_EOL;
 
 	try {
-		$list_order = array();
-		$list_shipment = array();
-		$info_shipment = array();
-		$tmp_list_update_order = array();
+		$list_stores = array();
+		$info_stores = array();
+
+		$tmp_list_orders = array();
+		$list_orders = array();
+		$info_orders = array();
+
+		$list_shipments = array();
+		$info_shipments = array();
 
 		// Fecha y Hora Actual
 		$now_date = new \DateTime('now');
@@ -27,7 +35,7 @@
 		$config['status'] = array('pending');
 		$config['store_id'] = array(1);
 		$config['search_store_name'] = 'English';
-		$config['from_date'] = '2013-01-01 00:00:00';
+		$config['from_date'] = '2015-01-01 00:00:00';
 		$config['to_date'] = $tomorrow_date->format('Y-m-d H:i:s');
 		$config['increment_id'] = array('100000095');
 		$config['order_id'] = array('192');
@@ -51,15 +59,19 @@
 		// Login SOAP
 		$session = $client->login($config['user'], $config['key']);
 
-		// Store
+		// Store List
 		/** /
-		$storeList = $client->call($session, 'store.list');
-		$store = $client->call($session, 'store.info', $config['store_id']);
+		$list_stores = $client->call($session, 'store.list');
+		/**/
+
+		// Store Info
+		/** /
+		$info_stores = $client->call($session, 'store.info', $config['store_id']);
 		/**/
 
 		// Funcion Anonima
 		// Pedimos un listado de las ordenes segun filtros aplicados
-		$fa_sales_orders_list = function($from, $to) use($client, $session, $config, &$tmp_list_update_order) {
+		$fa_sales_orders_list = function ($from, $to) use ($client, $session, $config, &$tmp_list_orders) {
 			$result = $client->call(
 				$session,
 				'sales_order.list',
@@ -79,7 +91,7 @@
 			);
 
 			if (!empty($result)) {
-				$tmp_list_update_order[] = $result;
+				$tmp_list_orders[] = $result;
 			}
 		};
 
@@ -98,35 +110,40 @@
 					$obj_to_date = $now_date;
 				}
 
-				// Cada 10 iteraciones retrasamos la ejecución 5 segundos ( es necesario para no tener problemas de memoria )
-				if (($i % 10) == 0) {
-					sleep(0.25);
-				}
+				echo '<p> ' . $i . '). From: ' . $obj_from_date->format('Y-m-d H:i:s') . ' - To: ' . $obj_to_date->format('Y-m-d H:i:s') . ' </p>' . PHP_EOL;
 
 				/**/
-				echo $i . '). From: ' . $obj_from_date->format('Y-m-d H:i:s') . ' - To: ' . $obj_to_date->format('Y-m-d H:i:s') . PHP_EOL;
 				$fa_sales_orders_list($obj_from_date->format('Y-m-d H:i:s'), $obj_to_date->format('Y-m-d H:i:s'));
 				/**/
 
+				// La fecha Hasta va ser la fecha Desde en la siguiente ejecucion
 				$obj_from_date = $obj_to_date;
+
+				// Cada 10 iteraciones retrasamos la ejecucion ( es necesario para no tener problemas de memoria )
+				if (($i % 10) == 0) {
+					echo '<p> sleep: ' . date('Y-m-d H:i:s') . ' - ';
+					sleep(2);
+					echo date('Y-m-d H:i:s') . ' </p>' . PHP_EOL;
+				}
 			}
 		} else {
-			/** /
+			/**/
 			$fa_sales_orders_list($config['from_date'], $config['to_date']);
 			/**/
 		}
 
 		// Iteramos por el primer elemento que representa la fecha
-		foreach ($tmp_list_update_order as $list) {
+		foreach ($tmp_list_orders as $list) {
 			// Iteramos por la cantidad de pedidos que tengamos por fecha
 			foreach ($list as $value) {
-				$list_update_order[] = $value;
+				// La idea seria tener todas las ordenes juntas ( y no separadas por fecha )
+				$list_orders[] = $value;
 			}
 		}
 
-		// Iteramos por orden
+		// Pedimos la info de cada orden // Iteramos por orden
 		/** /
-		foreach ($list_update_order as $value) {
+		foreach ($list_orders as $value) {
 			// Pedimos la info de cada orden y los persistimos en una variable
 			$tmp = $client->call(
 				$session,
@@ -140,13 +157,14 @@
 				$tmp_value['product_options'] = unserialize($tmp_value['product_options']);
 			}
 
-			$list_order[] = $tmp;
+			$info_orders[] = $tmp;
 		}
 		/**/
 
+		// Pedimos los envios correspondientes a las ordenes // Iteramos por orden
 		/** /
-		foreach ($list_order as $value) {
-			$list_shipment[] = $client->call(
+		foreach ($info_orders as $value) {
+			$list_shipments[] = $client->call(
 				$session,
 				'sales_order_shipment.list',
 				array(
@@ -158,10 +176,11 @@
 		}
 		/**/
 
+		// Pedimos la info de cada envio // Iteramos por envio
 		/** /
-		foreach ($list_shipment as $shipment) {
+		foreach ($list_shipments as $shipment) {
 			foreach ($shipment as $value) {
-				$info_shipment[] = $client->call(
+				$info_shipments[] = $client->call(
 					$session,
 					'sales_order_shipment.info',
 					array(
@@ -172,20 +191,63 @@
 		}
 		/**/
 
-		echo '<pre>';
-		echo '<p>' . $config['name'] . '</p>';
-		echo 'Data config: ' . PHP_EOL; print_r($config); echo '<hr />';
-		//echo '$storeList: ' . PHP_EOL;         print_r($storeList);         echo '<hr />';
-		//echo '$store: ' . PHP_EOL;             print_r($store);             echo '<hr />';
-		echo '$list_update_order: Count: ' . count($list_update_order) . PHP_EOL; print_r($list_update_order); echo '<hr />';
-		echo '$list_order: Count: ' . count($list_order) . PHP_EOL;           print_r($list_order);        echo '<hr />';
-		echo '$list_shipment: Count: ' . count($list_shipment) . PHP_EOL;     print_r($list_shipment);     echo '<hr />';
-		echo '$info_shipment: Count: ' . count($info_shipment) . PHP_EOL;     print_r($info_shipment);     echo '<hr />';
-		echo '</pre>';
+		echo '<pre>' . PHP_EOL;
+
+		/**/
+		echo '<p>' . $config['name'] . '</p>' . PHP_EOL;
+		/**/
+
+		/** /
+		echo '<p> Data config: </p>' . PHP_EOL;
+		print_r($config);
+		echo '<hr />' . PHP_EOL;
+		/**/
+
+		/** /
+		echo '<p> $list_stores: </p>' . PHP_EOL;
+		print_r($list_stores);
+		echo '<hr />' . PHP_EOL;
+		/**/
+
+		/** /
+		echo '<p> $info_stores: </p>' . PHP_EOL;
+		print_r($info_stores);
+		echo '<hr />' . PHP_EOL;
+		/**/
+
+		/**/
+		echo '<p> $list_orders: Count: ' . count($list_orders) . ' </p>' . PHP_EOL;
+		print_r($list_orders);
+		echo '<hr />' . PHP_EOL;
+		/**/
+
+		/** /
+		echo '<p> $info_orders: Count: ' . count($info_orders) . ' </p>' . PHP_EOL;
+		print_r($info_orders);
+		echo '<hr />' . PHP_EOL;
+		/**/
+
+		/** /
+		echo '<p> $list_shipments: Count: ' . count($list_shipments) . ' </p>' . PHP_EOL;
+		print_r($list_shipments);
+		echo '<hr />' . PHP_EOL;
+		/**/
+
+		/** /
+		echo '<p> $info_shipments: Count: ' . count($info_shipments) . ' </p>' . PHP_EOL;
+		print_r($info_shipments);
+		echo '<hr />' . PHP_EOL;
+		/**/
+
+		echo '</pre>' . PHP_EOL;
 	} catch (Exception $e) {
-		echo '<pre> <p>Exception: </p>';
+		echo '<pre>' . PHP_EOL;
+
+		echo '<p> Exception: </p>' . PHP_EOL;
 		var_dump($e);
-		echo '</pre>';
+		echo '<hr />' . PHP_EOL;
+
+		echo '</pre>' . PHP_EOL;
 	}
 
-	echo '<p>End Script File Name: ' . __FILE__ . '</p>';
+	echo '<p>End Script: ' . date('Y-m-d H:i:s') . ' / File Name: ' . __FILE__ . ' </p>' . PHP_EOL;
