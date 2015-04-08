@@ -47,7 +47,7 @@
 
 		$interval = $obj_from_date->diff($obj_to_date)->days;
 
-		// Creamos una conexión SOAP
+		// Creamos una conexión SOAP v.1
 		$client = new SoapClient(
 			$config['url'],
 			array(
@@ -100,10 +100,10 @@
 		if ($interval > 1) {
 			// Realizamos una iteracion por dia hasta alcanzar la fecha actual
 			for ($i = 0; $i < $interval; $i++) {
-				$tmp = new \DateTime($obj_from_date->format('Y-m-d H:i:s'));
-
-				// Incrementamos 1 dia
-				$obj_to_date = $tmp->modify("+1 day");
+				// Creamos un Objeto para la fecha hasta
+				$obj_to_date = new \DateTime($obj_from_date->format('Y-m-d H:i:s'));
+				// Seteamos la ultima hora del dia
+				$obj_to_date->setTime(23, 59, 59);
 
 				// En la ultima iteracion reemplazamos el valor del Hasta por la Fecha/Hora Actual
 				if (($i + 1) == $interval) {
@@ -116,8 +116,10 @@
 				$fa_sales_orders_list($obj_from_date->format('Y-m-d H:i:s'), $obj_to_date->format('Y-m-d H:i:s'));
 				/**/
 
-				// La fecha Hasta va ser la fecha Desde en la siguiente ejecucion
-				$obj_from_date = $obj_to_date;
+				// Pasamos al siguiente dia
+				$obj_from_date = $obj_from_date->modify("+1 day");
+				// Seteamos la primer hora del dia
+				$obj_from_date->setTime(0, 0, 0);
 
 				// Cada 10 iteraciones retrasamos la ejecucion ( es necesario para no tener problemas de memoria )
 				if (($i % 10) == 0) {
