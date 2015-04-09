@@ -35,7 +35,7 @@
 		$config['status'] = array('pending');
 		$config['store_id'] = array(1);
 		$config['search_store_name'] = 'English';
-		$config['from_date'] = '2015-01-01 00:00:00';
+		$config['from_date'] = '2013-01-01 00:00:00';
 		$config['to_date'] = $tomorrow_date->format('Y-m-d H:i:s');
 		$config['increment_id'] = array('100000095');
 		$config['order_id'] = array('192');
@@ -110,7 +110,7 @@
 					$obj_to_date = $now_date;
 				}
 
-				echo '<p> ' . $i . '). From: ' . $obj_from_date->format('Y-m-d H:i:s') . ' - To: ' . $obj_to_date->format('Y-m-d H:i:s') . ' </p>' . PHP_EOL;
+				echo '<p> ' . $i . '). Call: sales_order.list - From: ' . $obj_from_date->format('Y-m-d H:i:s') . ' - To: ' . $obj_to_date->format('Y-m-d H:i:s') . ' </p>' . PHP_EOL;
 
 				/**/
 				$fa_sales_orders_list($obj_from_date->format('Y-m-d H:i:s'), $obj_to_date->format('Y-m-d H:i:s'));
@@ -129,6 +129,8 @@
 				}
 			}
 		} else {
+			echo '<p> Call: sales_order.list - From: ' . $config['from_date'] . ' - To: ' . $config['to_date'] . ' </p>' . PHP_EOL;
+
 			/**/
 			$fa_sales_orders_list($config['from_date'], $config['to_date']);
 			/**/
@@ -219,7 +221,7 @@
 
 		/**/
 		echo '<p> $list_orders: Count: ' . count($list_orders) . ' </p>' . PHP_EOL;
-		print_r($list_orders);
+		//print_r($list_orders);
 		echo '<hr />' . PHP_EOL;
 		/**/
 
