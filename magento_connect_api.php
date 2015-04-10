@@ -91,7 +91,8 @@
 			);
 
 			if (!empty($result)) {
-				$tmp_list_orders[] = $result;
+				$key = new \DateTime($to);
+				$tmp_list_orders[$key->format('Y-m-d_H:i:s')] = $result;
 			}
 		};
 
@@ -122,7 +123,7 @@
 				$obj_from_date->setTime(0, 0, 0);
 
 				// Cada 10 iteraciones retrasamos la ejecucion ( es necesario para no tener problemas de memoria )
-				if (($i % 10) == 0) {
+				if ($i != 0 && ($i % 10) == 0) {
 					echo '<p> sleep: ' . date('Y-m-d H:i:s') . ' - ';
 					sleep(2);
 					echo date('Y-m-d H:i:s') . ' </p>' . PHP_EOL;
@@ -136,8 +137,9 @@
 			/**/
 		}
 
-		// Iteramos por el primer elemento que representa la fecha
-		foreach ($tmp_list_orders as $list) {
+		// Iteramos por fecha
+		foreach ($tmp_list_orders as $key => $list) {
+			echo '<p> Fecha: ' . $key . ' - Orders Count: ' . count($list) . ' </p>' . PHP_EOL;
 			// Iteramos por la cantidad de pedidos que tengamos por fecha
 			foreach ($list as $value) {
 				// La idea seria tener todas las ordenes juntas ( y no separadas por fecha )
