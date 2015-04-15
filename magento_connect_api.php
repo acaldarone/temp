@@ -60,12 +60,12 @@
 		$session = $client->login($config['user'], $config['key']);
 
 		// Store List
-		/** /
+		/**/
 		$list_stores = $client->call($session, 'store.list');
 		/**/
 
 		// Store Info
-		/** /
+		/**/
 		$info_stores = $client->call($session, 'store.info', $config['store_id']);
 		/**/
 
@@ -148,7 +148,7 @@
 		}
 
 		// Pedimos la info de cada orden // Iteramos por orden
-		/** /
+		/**/
 		foreach ($list_orders as $value) {
 			// Pedimos la info de cada orden y los persistimos en una variable
 			$tmp = $client->call(
@@ -168,9 +168,9 @@
 		/**/
 
 		// Pedimos los envios correspondientes a las ordenes // Iteramos por orden
-		/** /
+		/**/
 		foreach ($info_orders as $value) {
-			$list_shipments[] = $client->call(
+			$result = $client->call(
 				$session,
 				'sales_order_shipment.list',
 				array(
@@ -179,11 +179,15 @@
 					)
 				)
 			);
+
+			if (!empty($result)) {
+				$list_shipments[] = $result;
+			}
 		}
 		/**/
 
 		// Pedimos la info de cada envio // Iteramos por envio
-		/** /
+		/**/
 		foreach ($list_shipments as $shipment) {
 			foreach ($shipment as $value) {
 				$info_shipments[] = $client->call(
@@ -203,19 +207,19 @@
 		echo '<p>' . $config['name'] . '</p>' . PHP_EOL;
 		/**/
 
-		/** /
+		/**/
 		echo '<p> Data config: </p>' . PHP_EOL;
 		print_r($config);
 		echo '<hr />' . PHP_EOL;
 		/**/
 
-		/** /
+		/**/
 		echo '<p> $list_stores: </p>' . PHP_EOL;
 		print_r($list_stores);
 		echo '<hr />' . PHP_EOL;
 		/**/
 
-		/** /
+		/**/
 		echo '<p> $info_stores: </p>' . PHP_EOL;
 		print_r($info_stores);
 		echo '<hr />' . PHP_EOL;
@@ -223,23 +227,23 @@
 
 		/**/
 		echo '<p> $list_orders: Count: ' . count($list_orders) . ' </p>' . PHP_EOL;
-		//print_r($list_orders);
+		print_r($list_orders);
 		echo '<hr />' . PHP_EOL;
 		/**/
 
-		/** /
+		/**/
 		echo '<p> $info_orders: Count: ' . count($info_orders) . ' </p>' . PHP_EOL;
 		print_r($info_orders);
 		echo '<hr />' . PHP_EOL;
 		/**/
 
-		/** /
+		/**/
 		echo '<p> $list_shipments: Count: ' . count($list_shipments) . ' </p>' . PHP_EOL;
 		print_r($list_shipments);
 		echo '<hr />' . PHP_EOL;
 		/**/
 
-		/** /
+		/**/
 		echo '<p> $info_shipments: Count: ' . count($info_shipments) . ' </p>' . PHP_EOL;
 		print_r($info_shipments);
 		echo '<hr />' . PHP_EOL;
