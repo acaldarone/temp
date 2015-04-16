@@ -30,79 +30,79 @@
 
 	$fa_logger('Begin Script: ' . date('Y-m-d H:i:s') . ' / File Name: ' . __FILE__);
 
+	$list_stores = array();
+	$info_stores = array();
+
+	$list_orders = array();
+	$info_orders = array();
+
+	$list_shipments = array();
+	$info_shipments = array();
+
+	// Fecha y Hora Actual
+	$now_date = new \DateTime('now');
+	// Fecha Actual y Hora 00:00:00
+	//$now_date = new \DateTime('today');
+
+	// Fecha De Mañana y Hora 00:00:00
+	$tomorrow_date = new \DateTime('tomorrow');
+	// Fecha de Mañana con la Hora Actual
+	//$tomorrow_date = new \DateTime('now');
+	//$tomorrow_date->modify('+1 day');
+
+	// Magento Localhost
+	/**/
+	$config['name'] = 'Magento Localhost';
+	$config['url'] = 'http://magento.local/api/soap/?wsdl';
+	$config['user'] = 'magento_api';
+	$config['key'] = 'magento_api';
+	$config['filter'] = array(
+		//'search_store_name' => 'English',
+		//'status' => array('pending'),
+		'store_id' => array(1),
+		//'order_id' => array('192'),
+		//'increment_id' => array('100000095'),
+		'from_date' => '2014-01-01 00:00:00',
+		'to_date' => $tomorrow_date->format('Y-m-d H:i:s'),
+	);
+	/**/
+
+	// Calculamos la diferencia de dias entre el Desde y el Hasta
+	$interval = 0;
+
+	if (isset($config['filter']['from_date']) && $config['filter']['to_date']) {
+		$obj_from_date = new \DateTime($config['filter']['from_date']);
+		$obj_to_date   = new \DateTime($config['filter']['to_date']);
+
+		$interval = $obj_from_date->diff($obj_to_date)->days;
+	}
+
+	// Creamos los filtros cargados en la config
+	$filter = array();
+
+	if (isset($config['filter']) && !empty($config['filter'])) {
+		if (isset($config['filter']['status'])) {
+			$filter['status'] = $config['filter']['status'];
+		}
+
+		if (isset($config['filter']['store_id'])) {
+			$filter['store_id'] = $config['filter']['store_id'];
+		}
+
+		if (isset($config['filter']['order_id'])) {
+			$filter['order_id'] = $config['filter']['order_id'];
+		}
+
+		if (isset($config['filter']['increment_id'])) {
+			$filter['increment_id'] = $config['filter']['increment_id'];
+		}
+
+		if (isset($config['filter']['search_store_name'])) {
+			$filter['store_name'] = array('like' => '%' . $config['filter']['search_store_name']);
+		}
+	}
+
 	try {
-		$list_stores = array();
-		$info_stores = array();
-
-		$list_orders = array();
-		$info_orders = array();
-
-		$list_shipments = array();
-		$info_shipments = array();
-
-		// Fecha y Hora Actual
-		$now_date = new \DateTime('now');
-		// Fecha Actual y Hora 00:00:00
-		//$now_date = new \DateTime('today');
-
-		// Fecha De Mañana y Hora 00:00:00
-		$tomorrow_date = new \DateTime('tomorrow');
-		// Fecha de Mañana con la Hora Actual
-		//$tomorrow_date = new \DateTime('now');
-		//$tomorrow_date->modify('+1 day');
-
-		// Magento Localhost
-		/**/
-		$config['name'] = 'Magento Localhost';
-		$config['url'] = 'http://magento.local/api/soap/?wsdl';
-		$config['user'] = 'magento_api';
-		$config['key'] = 'magento_api';
-		$config['filter'] = array(
-			//'search_store_name' => 'English',
-			//'status' => array('pending'),
-			'store_id' => array(1),
-			//'order_id' => array('192'),
-			//'increment_id' => array('100000095'),
-			'from_date' => '2014-01-01 00:00:00',
-			'to_date' => $tomorrow_date->format('Y-m-d H:i:s'),
-		);
-		/**/
-
-		// Calculamos la diferencia de dias entre el Desde y el Hasta
-		$interval = 0;
-
-		if (isset($config['filter']['from_date']) && $config['filter']['to_date']) {
-			$obj_from_date = new \DateTime($config['filter']['from_date']);
-			$obj_to_date   = new \DateTime($config['filter']['to_date']);
-
-			$interval = $obj_from_date->diff($obj_to_date)->days;
-		}
-
-		// Creamos los filtros cargados en la config
-		$filter = array();
-
-		if (isset($config['filter']) && !empty($config['filter'])) {
-			if (isset($config['filter']['status'])) {
-				$filter['status'] = $config['filter']['status'];
-			}
-
-			if (isset($config['filter']['store_id'])) {
-				$filter['store_id'] = $config['filter']['store_id'];
-			}
-
-			if (isset($config['filter']['order_id'])) {
-				$filter['order_id'] = $config['filter']['order_id'];
-			}
-
-			if (isset($config['filter']['increment_id'])) {
-				$filter['increment_id'] = $config['filter']['increment_id'];
-			}
-
-			if (isset($config['filter']['search_store_name'])) {
-				$filter['store_name'] = array('like' => '%' . $config['filter']['search_store_name']);
-			}
-		}
-
 		// Creamos una conexión SOAP v.1
 		$client = new \SoapClient(
 			$config['url'],
@@ -116,12 +116,12 @@
 		$session = $client->login($config['user'], $config['key']);
 
 		// Store List
-		/** /
+		/**/
 		$list_stores = $client->call($session, 'store.list');
 		/**/
 
 		// Store Info
-		/** /
+		/**/
 		$info_stores = array();
 
 		if (isset($config['filter']) && isset($config['filter']['store_id'])) {
@@ -228,7 +228,7 @@
 		/**/
 
 		// Pedimos los envios correspondientes a las ordenes // Iteramos por orden
-		/** /
+		/**/
 		foreach ($info_orders as $value) {
 			$result = $client->call(
 				$session,
@@ -247,7 +247,7 @@
 		/**/
 
 		// Pedimos la info de cada envio // Iteramos por envio
-		/** /
+		/**/
 		foreach ($list_shipments as $shipment) {
 			foreach ($shipment as $value) {
 				$info_shipments[] = $client->call(
@@ -260,24 +260,24 @@
 			}
 		}
 		/**/
-
-		/**/
-		$fa_logger('', '', '<pre>');
-		$fa_logger($config['name']);
-		$fa_logger('Data config: ', $config, '<hr />');
-		$fa_logger('$list_stores: ', $list_stores, '<hr />');
-		$fa_logger('$info_stores: ', $info_stores, '<hr />');
-		$fa_logger('$list_orders: Count: ' . count($list_orders), $list_orders, '<hr />');
-		$fa_logger('$info_orders: Count: ' . count($info_orders), $info_orders, '<hr />');
-		$fa_logger('$list_shipments: Count: ' . count($list_shipments), $list_shipments, '<hr />');
-		$fa_logger('$info_shipments: Count: ' . count($info_shipments), $info_shipments, '<hr />');
-		$fa_logger('', '', '</pre>');
-		/**/
 	} catch (\Exception $e) {
 		$fa_logger('', '', '<pre>');
 		$fa_logger('Exception: ', $e, '<hr />', TRUE);
 		$fa_logger('', '', '<pre>');
 	}
+
+	/**/
+	$fa_logger('', '', '<pre>');
+	$fa_logger($config['name']);
+	$fa_logger('Data config: ', $config, '<hr />');
+	$fa_logger('$list_stores: ', $list_stores, '<hr />');
+	$fa_logger('$info_stores: ', $info_stores, '<hr />');
+	$fa_logger('$list_orders: Count: ' . count($list_orders), $list_orders, '<hr />');
+	$fa_logger('$info_orders: Count: ' . count($info_orders), $info_orders, '<hr />');
+	$fa_logger('$list_shipments: Count: ' . count($list_shipments), $list_shipments, '<hr />');
+	$fa_logger('$info_shipments: Count: ' . count($info_shipments), $info_shipments, '<hr />');
+	$fa_logger('', '', '</pre>');
+	/**/
 
 	$fa_logger('End Script: ' . date('Y-m-d H:i:s') . ' / File Name: ' . __FILE__);
 
