@@ -1,5 +1,6 @@
 <?php
-	// php /var/www/html/temp/magento_connect_api.php > ~/Escritorio/result.localhost.txt
+	// php /var/www/html/temp/magento_connect_api.php
+	// php /var/www/html/temp/magento_connect_api.php > /var/www/html/temp/magento_connect_api_result.log
 	// http://temp/magento_connect_api.php
 
 	echo '<p>Begin Script: ' . date('Y-m-d H:i:s') . ' / File Name: ' . __FILE__ . ' </p>' . PHP_EOL;
@@ -32,20 +33,51 @@
 		$config['url'] = 'http://magento.local/api/soap/?wsdl';
 		$config['user'] = 'magento_api';
 		$config['key'] = 'magento_api';
-		$config['status'] = array('pending');
-		$config['store_id'] = array(1);
-		$config['search_store_name'] = 'English';
-		$config['from_date'] = '2013-01-01 00:00:00';
-		$config['to_date'] = $tomorrow_date->format('Y-m-d H:i:s');
-		$config['increment_id'] = array('100000095');
-		$config['order_id'] = array('192');
+		$config['filter'] = array(
+			//'search_store_name' => 'English',
+			//'status' => array('pending'),
+			'store_id' => array(1),
+			//'order_id' => array('192'),
+			//'increment_id' => array('100000095'),
+			'from_date' => '2013-01-01 00:00:00',
+			'to_date' => $tomorrow_date->format('Y-m-d H:i:s'),
+		);
 		/**/
 
 		// Calculamos la diferencia de dias entre el Desde y el Hasta
-		$obj_from_date = new DateTime($config['from_date']);
-		$obj_to_date   = new DateTime($config['to_date']);
+		$interval = 0;
 
-		$interval = $obj_from_date->diff($obj_to_date)->days;
+		if (isset($config['filter']['from_date']) && $config['filter']['to_date']) {
+			$obj_from_date = new DateTime($config['filter']['from_date']);
+			$obj_to_date   = new DateTime($config['filter']['to_date']);
+
+			$interval = $obj_from_date->diff($obj_to_date)->days;
+		}
+
+		// Creamos los filtros cargados en la config
+		$filter = array();
+
+		if (isset($config['filter']) && !empty($config['filter'])) {
+			if (isset($config['filter']['status'])) {
+				$filter['status'] = $config['filter']['status'];
+			}
+
+			if (isset($config['filter']['store_id'])) {
+				$filter['store_id'] = $config['filter']['store_id'];
+			}
+
+			if (isset($config['filter']['order_id'])) {
+				$filter['order_id'] = $config['filter']['order_id'];
+			}
+
+			if (isset($config['filter']['increment_id'])) {
+				$filter['increment_id'] = $config['filter']['increment_id'];
+			}
+
+			if (isset($config['filter']['search_store_name'])) {
+				$filter['store_name'] = array('like' => '%' . $config['filter']['search_store_name']);
+			}
+		}
 
 		// Creamos una conexión SOAP v.1
 		$client = new SoapClient(
@@ -66,27 +98,30 @@
 
 		// Store Info
 		/**/
-		$info_stores = $client->call($session, 'store.info', $config['store_id']);
+		$info_stores = array();
+
+		if (isset($config['filter']) && isset($config['filter']['store_id'])) {
+			$client->call($session, 'store.info', $config['filter']['store_id']);
+		}
 		/**/
 
 		// Funcion Anonima
 		// Pedimos un listado de las ordenes segun filtros aplicados
-		$fa_sales_orders_list = function ($from, $to) use ($client, $session, $config, &$tmp_list_orders) {
+		$fa_sales_orders_list = function ($from = NULL, $to = NULL) use ($client, $session, $filter, &$tmp_list_orders) {
+			// Si tenemos valores para las fechas agregamos el filtro
+			// No fue creado este filtro anteriormente porque los datos DESDE y HASTA pueden ser dinamicos
+			if (!empty($from) && !empty($to)) {
+				$filter['updated_at'] = array(
+					'from' => $from,
+					'to' => $to
+				);
+			}
+
 			$result = $client->call(
 				$session,
 				'sales_order.list',
 				array(
-					'filter' => array(
-						//'status' => $config['status'],
-						'store_id' => $config['store_id'],
-						//'store_name' => array('like' => '%' . $config['search_store_name']),
-						'updated_at' => array(
-							'from' => $from,
-							'to' => $to
-						),
-						//'increment_id' => $config['increment_id'],
-						//'order_id' => $config['order_id'],
-					)
+					'filter' => $filter
 				)
 			);
 
@@ -130,10 +165,16 @@
 				}
 			}
 		} else {
-			echo '<p> Call: sales_order.list - From: ' . $config['from_date'] . ' - To: ' . $config['to_date'] . ' </p>' . PHP_EOL;
-
 			/**/
-			$fa_sales_orders_list($config['from_date'], $config['to_date']);
+			if (isset($config['filter']['from_date']) && isset($config['filter']['to_date'])) {
+				echo '<p> Call: sales_order.list - From: ' . $config['filter']['from_date'] . ' - To: ' . $config['filter']['to_date'] . ' </p>' . PHP_EOL;
+
+				$fa_sales_orders_list($config['filter']['from_date'], $config['filter']['to_date']);
+			} else {
+				echo '<p> Call: sales_order.list </p>' . PHP_EOL;
+
+				$fa_sales_orders_list();
+			}
 			/**/
 		}
 
