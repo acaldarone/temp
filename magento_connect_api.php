@@ -3,13 +3,37 @@
 	// php /var/www/html/temp/magento_connect_api.php > /var/www/html/temp/magento_connect_api_result.log
 	// http://temp/magento_connect_api.php
 
-	echo '<p>Begin Script: ' . date('Y-m-d H:i:s') . ' / File Name: ' . __FILE__ . ' </p>' . PHP_EOL;
+	$debug = TRUE;
+
+	// Funcion Anonima
+	$fa_logger = function ($msg = NULL, $var = NULL, $tag = NULL, $error = FALSE) use ($debug) {
+		if ($debug === FALSE) {
+			return;
+		}
+
+		if (!empty($msg)) {
+			echo '<p> ' . $msg . ' </p>' . PHP_EOL;
+		}
+
+		if (!empty($var)) {
+			if (empty($error)) {
+				print_r($var);
+			} else {
+				var_dump($var);
+			}
+		}
+
+		if (!empty($tag)) {
+			echo $tag . PHP_EOL;
+		}
+	};
+
+	$fa_logger('Begin Script: ' . date('Y-m-d H:i:s') . ' / File Name: ' . __FILE__);
 
 	try {
 		$list_stores = array();
 		$info_stores = array();
 
-		$tmp_list_orders = array();
 		$list_orders = array();
 		$info_orders = array();
 
@@ -39,7 +63,7 @@
 			'store_id' => array(1),
 			//'order_id' => array('192'),
 			//'increment_id' => array('100000095'),
-			'from_date' => '2013-01-01 00:00:00',
+			'from_date' => '2014-01-01 00:00:00',
 			'to_date' => $tomorrow_date->format('Y-m-d H:i:s'),
 		);
 		/**/
@@ -48,8 +72,8 @@
 		$interval = 0;
 
 		if (isset($config['filter']['from_date']) && $config['filter']['to_date']) {
-			$obj_from_date = new DateTime($config['filter']['from_date']);
-			$obj_to_date   = new DateTime($config['filter']['to_date']);
+			$obj_from_date = new \DateTime($config['filter']['from_date']);
+			$obj_to_date   = new \DateTime($config['filter']['to_date']);
 
 			$interval = $obj_from_date->diff($obj_to_date)->days;
 		}
@@ -80,7 +104,7 @@
 		}
 
 		// Creamos una conexión SOAP v.1
-		$client = new SoapClient(
+		$client = new \SoapClient(
 			$config['url'],
 			array(
 				'trace' => 1,
@@ -92,12 +116,12 @@
 		$session = $client->login($config['user'], $config['key']);
 
 		// Store List
-		/**/
+		/** /
 		$list_stores = $client->call($session, 'store.list');
 		/**/
 
 		// Store Info
-		/**/
+		/** /
 		$info_stores = array();
 
 		if (isset($config['filter']) && isset($config['filter']['store_id'])) {
@@ -107,7 +131,7 @@
 
 		// Funcion Anonima
 		// Pedimos un listado de las ordenes segun filtros aplicados
-		$fa_sales_orders_list = function ($from = NULL, $to = NULL) use ($client, $session, $filter, &$tmp_list_orders) {
+		$fa_sales_orders_list = function ($from = NULL, $to = NULL) use ($client, $session, $filter, &$list_orders) {
 			// Si tenemos valores para las fechas agregamos el filtro
 			// No fue creado este filtro anteriormente porque los datos DESDE y HASTA pueden ser dinamicos
 			if (!empty($from) && !empty($to)) {
@@ -126,8 +150,7 @@
 			);
 
 			if (!empty($result)) {
-				$key = new \DateTime($to);
-				$tmp_list_orders[$key->format('Y-m-d_H:i:s')] = $result;
+				$list_orders = array_merge($list_orders, $result);
 			}
 		};
 
@@ -146,7 +169,7 @@
 					$obj_to_date = $now_date;
 				}
 
-				echo '<p> ' . $i . '). Call: sales_order.list - From: ' . $obj_from_date->format('Y-m-d H:i:s') . ' - To: ' . $obj_to_date->format('Y-m-d H:i:s') . ' </p>' . PHP_EOL;
+				$fa_logger($i . '). Call: sales_order.list - From: ' . $obj_from_date->format('Y-m-d H:i:s') . ' - To: ' . $obj_to_date->format('Y-m-d H:i:s'));
 
 				/**/
 				$fa_sales_orders_list($obj_from_date->format('Y-m-d H:i:s'), $obj_to_date->format('Y-m-d H:i:s'));
@@ -159,33 +182,29 @@
 
 				// Cada 10 iteraciones retrasamos la ejecucion ( es necesario para no tener problemas de memoria )
 				if ($i != 0 && ($i % 10) == 0) {
-					echo '<p> sleep: ' . date('Y-m-d H:i:s') . ' - ';
+					$fa_logger('Begin Sleep: ' . date('Y-m-d H:i:s'));
+
 					sleep(2);
-					echo date('Y-m-d H:i:s') . ' </p>' . PHP_EOL;
+
+					$fa_logger('End Sleep: ' . date('Y-m-d H:i:s'));
 				}
 			}
 		} else {
-			/**/
 			if (isset($config['filter']['from_date']) && isset($config['filter']['to_date'])) {
-				echo '<p> Call: sales_order.list - From: ' . $config['filter']['from_date'] . ' - To: ' . $config['filter']['to_date'] . ' </p>' . PHP_EOL;
-
-				$fa_sales_orders_list($config['filter']['from_date'], $config['filter']['to_date']);
+				$msg = 'Call: sales_order.list - From: ' . $config['filter']['from_date'] . ' - To: ' . $config['filter']['to_date'];
+				$from = $config['filter']['from_date'];
+				$to = $config['filter']['to_date'];
 			} else {
-				echo '<p> Call: sales_order.list </p>' . PHP_EOL;
-
-				$fa_sales_orders_list();
+				$msg = 'Call: sales_order.list';
+				$from = NULL;
+				$to = NULL;
 			}
+
+			$fa_logger($msg);
+
 			/**/
-		}
-
-		// Iteramos por fecha
-		foreach ($tmp_list_orders as $key => $list) {
-			echo '<p> Fecha: ' . $key . ' - Orders Count: ' . count($list) . ' </p>' . PHP_EOL;
-			// Iteramos por la cantidad de pedidos que tengamos por fecha
-			foreach ($list as $value) {
-				// La idea seria tener todas las ordenes juntas ( y no separadas por fecha )
-				$list_orders[] = $value;
-			}
+			$fa_sales_orders_list($from, $to);
+			/**/
 		}
 
 		// Pedimos la info de cada orden // Iteramos por orden
@@ -209,7 +228,7 @@
 		/**/
 
 		// Pedimos los envios correspondientes a las ordenes // Iteramos por orden
-		/**/
+		/** /
 		foreach ($info_orders as $value) {
 			$result = $client->call(
 				$session,
@@ -228,7 +247,7 @@
 		/**/
 
 		// Pedimos la info de cada envio // Iteramos por envio
-		/**/
+		/** /
 		foreach ($list_shipments as $shipment) {
 			foreach ($shipment as $value) {
 				$info_shipments[] = $client->call(
@@ -242,63 +261,23 @@
 		}
 		/**/
 
-		echo '<pre>' . PHP_EOL;
-
 		/**/
-		echo '<p>' . $config['name'] . '</p>' . PHP_EOL;
+		$fa_logger('', '', '<pre>');
+		$fa_logger($config['name']);
+		$fa_logger('Data config: ', $config, '<hr />');
+		$fa_logger('$list_stores: ', $list_stores, '<hr />');
+		$fa_logger('$info_stores: ', $info_stores, '<hr />');
+		$fa_logger('$list_orders: Count: ' . count($list_orders), $list_orders, '<hr />');
+		$fa_logger('$info_orders: Count: ' . count($info_orders), $info_orders, '<hr />');
+		$fa_logger('$list_shipments: Count: ' . count($list_shipments), $list_shipments, '<hr />');
+		$fa_logger('$info_shipments: Count: ' . count($info_shipments), $info_shipments, '<hr />');
+		$fa_logger('', '', '</pre>');
 		/**/
-
-		/**/
-		echo '<p> Data config: </p>' . PHP_EOL;
-		print_r($config);
-		echo '<hr />' . PHP_EOL;
-		/**/
-
-		/**/
-		echo '<p> $list_stores: </p>' . PHP_EOL;
-		print_r($list_stores);
-		echo '<hr />' . PHP_EOL;
-		/**/
-
-		/**/
-		echo '<p> $info_stores: </p>' . PHP_EOL;
-		print_r($info_stores);
-		echo '<hr />' . PHP_EOL;
-		/**/
-
-		/**/
-		echo '<p> $list_orders: Count: ' . count($list_orders) . ' </p>' . PHP_EOL;
-		print_r($list_orders);
-		echo '<hr />' . PHP_EOL;
-		/**/
-
-		/**/
-		echo '<p> $info_orders: Count: ' . count($info_orders) . ' </p>' . PHP_EOL;
-		print_r($info_orders);
-		echo '<hr />' . PHP_EOL;
-		/**/
-
-		/**/
-		echo '<p> $list_shipments: Count: ' . count($list_shipments) . ' </p>' . PHP_EOL;
-		print_r($list_shipments);
-		echo '<hr />' . PHP_EOL;
-		/**/
-
-		/**/
-		echo '<p> $info_shipments: Count: ' . count($info_shipments) . ' </p>' . PHP_EOL;
-		print_r($info_shipments);
-		echo '<hr />' . PHP_EOL;
-		/**/
-
-		echo '</pre>' . PHP_EOL;
-	} catch (Exception $e) {
-		echo '<pre>' . PHP_EOL;
-
-		echo '<p> Exception: </p>' . PHP_EOL;
-		var_dump($e);
-		echo '<hr />' . PHP_EOL;
-
-		echo '</pre>' . PHP_EOL;
+	} catch (\Exception $e) {
+		$fa_logger('', '', '<pre>');
+		$fa_logger('Exception: ', $e, '<hr />', TRUE);
+		$fa_logger('', '', '<pre>');
 	}
 
-	echo '<p>End Script: ' . date('Y-m-d H:i:s') . ' / File Name: ' . __FILE__ . ' </p>' . PHP_EOL;
+	$fa_logger('End Script: ' . date('Y-m-d H:i:s') . ' / File Name: ' . __FILE__);
+
