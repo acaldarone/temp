@@ -223,6 +223,8 @@
 				$tmp_value['product_options'] = unserialize($tmp_value['product_options']);
 			}
 
+			$fa_logger('Processed: order_increment_id: ' . $value['increment_id']);
+
 			$info_orders[] = $tmp;
 		}
 		/**/
@@ -257,6 +259,8 @@
 						$value['increment_id']
 					)
 				);
+
+				$fa_logger('Processed: shipment_increment_id: ' . $value['increment_id']);
 			}
 		}
 		/**/
