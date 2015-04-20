@@ -39,6 +39,9 @@
 	$list_shipments = array();
 	$info_shipments = array();
 
+	$list_countries = array();
+	$info_region = array();
+
 	// Fecha y Hora Actual
 	$now_date = new \DateTime('now');
 	// Fecha Actual y Hora 00:00:00
@@ -229,6 +232,37 @@
 		}
 		/**/
 
+		// Pedimos las regiones del pais a enviar el producto // Iteramos por orden
+		/**/
+		foreach ($info_orders as $value) {
+			$country_id = $value['shipping_address']['country_id'];
+			$region_id = $value['shipping_address']['region_id'];
+
+			if (!isset($list_countries[$country_id])) {
+				$result = $client->call(
+					$session,
+					'region.list',
+					array(
+						$country_id
+					)
+				);
+
+				if (!empty($result)) {
+					$list_countries[$country_id] = $result;
+				}
+			}
+
+			if (!empty($list_countries)) {
+				// Buscamos en el listado de regiones por pais el id de la region a enviar la orden
+				foreach ($list_countries[$country_id] as $key => $region) {
+					if ($region['region_id'] == $region_id) {
+						$info_region = $list_countries[$country_id][$key];
+					}
+				}
+			}
+		}
+		/**/
+
 		// Pedimos los envios correspondientes a las ordenes // Iteramos por orden
 		/**/
 		foreach ($info_orders as $value) {
@@ -274,12 +308,17 @@
 	$fa_logger('', '', '<pre>');
 	$fa_logger($config['name']);
 	$fa_logger('Data config: ', $config, '<hr />');
-	$fa_logger('$list_stores: ', $list_stores, '<hr />');
+
+	//$fa_logger('$list_stores: ', $list_stores, '<hr />');
+	//$fa_logger('$list_orders: Count: ' . count($list_orders), $list_orders, '<hr />');
+	//$fa_logger('$list_countries: Count: ' . count($list_countries), $list_countries, '<hr />');
+	//$fa_logger('$list_shipments: Count: ' . count($list_shipments), $list_shipments, '<hr />');
+
 	$fa_logger('$info_stores: ', $info_stores, '<hr />');
-	$fa_logger('$list_orders: Count: ' . count($list_orders), $list_orders, '<hr />');
 	$fa_logger('$info_orders: Count: ' . count($info_orders), $info_orders, '<hr />');
-	$fa_logger('$list_shipments: Count: ' . count($list_shipments), $list_shipments, '<hr />');
+	$fa_logger('$info_region: ', $info_region, '<hr />');
 	$fa_logger('$info_shipments: Count: ' . count($info_shipments), $info_shipments, '<hr />');
+
 	$fa_logger('', '', '</pre>');
 	/**/
 
