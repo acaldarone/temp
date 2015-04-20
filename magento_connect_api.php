@@ -235,6 +235,7 @@
 		// Pedimos las regiones del pais a enviar el producto // Iteramos por orden
 		/**/
 		foreach ($info_orders as $value) {
+			$order_id = $value['increment_id'];
 			$country_id = $value['shipping_address']['country_id'];
 			$region_id = $value['shipping_address']['region_id'];
 
@@ -256,7 +257,7 @@
 				// Buscamos en el listado de regiones por pais el id de la region a enviar la orden
 				foreach ($list_countries[$country_id] as $key => $region) {
 					if ($region['region_id'] == $region_id) {
-						$info_region = $list_countries[$country_id][$key];
+						$info_region[$order_id] = $list_countries[$country_id][$key];
 					}
 				}
 			}
