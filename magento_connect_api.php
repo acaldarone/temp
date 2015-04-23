@@ -54,6 +54,7 @@
 	//$tomorrow_date->modify('+1 day');
 
 	// Magento Localhost
+	// Comentar los filtros que no queremos usar
 	/**/
 	$config['name'] = 'Magento Localhost';
 	$config['url'] = 'http://magento.local/api/soap/?wsdl';
@@ -152,7 +153,7 @@
 				)
 			);
 
-			if (!empty($result)) {
+			if (!empty($result) && is_array($result)) {
 				$list_orders = array_merge($list_orders, $result);
 			}
 		};
@@ -255,9 +256,9 @@
 
 			if (!empty($list_countries)) {
 				// Buscamos en el listado de regiones por pais el id de la region a enviar la orden
-				foreach ($list_countries[$country_id] as $key => $region) {
+				foreach ($list_countries[$country_id] as $region) {
 					if ($region['region_id'] == $region_id) {
-						$info_region[$order_id] = $list_countries[$country_id][$key];
+						$info_region[$order_id] = $region;
 					}
 				}
 			}
